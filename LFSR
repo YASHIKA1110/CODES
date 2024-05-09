@@ -1,0 +1,57 @@
+module LFSR_4bit(
+    input wire clk,
+    input wire reset,
+    input wire inject_fault,
+    input wire [3:0] fault_type,
+    output reg [3:0] q
+);
+
+initial q = 4'b0001;
+
+always @(posedge clk or posedge reset) begin
+    if (reset)
+        q <= 4'b0001;
+    else begin
+        if (inject_fault) begin
+            case (fault_type[3:0])
+                4'b0001: q <= {q[2:0], ~q[3]};
+                4'b0010: q <= {q[2:0], 1'b0};
+                4'b0100: q <= {q[2:0], 1'b1};
+                default: q <= {q[2:0], q[3] ^ q[2]};
+            endcase
+        end else begin
+            q <= {q[2:0], q[3] ^ q[2]};
+        end
+    end
+end
+
+endmodule
+
+
+module tb_LFSR_4bit;
+reg clk, reset, inject_fault;
+reg [3:0] fault_type;
+wire [3:0] q;
+
+LFSR_4bit lfsr(.clk(clk), .reset(reset), .inject_fault(inject_fault), .fault_type(fault_type), .q(q));
+
+initial begin
+    clk = 0;
+    forever #10 clk = ~clk;
+end
+
+initial begin
+    reset = 1; #15;
+    reset = 0;
+    inject_fault = 0; fault_type = 4'b0000; #40;
+    inject_fault = 1; fault_type = 4'b0001; #40;
+    inject_fault = 1; fault_type = 4'b0010; #40;
+    inject_fault = 1; fault_type = 4'b0100; #40;
+    $finish;
+end
+
+initial begin
+    $monitor("Time=%t, Output=%b, Fault Type=%b", $time, q, fault_type);
+end
+
+endmodule
