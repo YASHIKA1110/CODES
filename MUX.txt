@@ -1,0 +1,68 @@
+module mux4to1 (
+    input wire [3:0] in,  
+    input wire [1:0] sel,
+    output wire out      
+);
+
+assign out = in[sel];
+
+endmodule
+
+
+
+
+`timescale 1ns / 1ps
+
+module tb_mux4to1();
+
+reg [3:0] in;    
+reg [1:0] sel;    
+wire out;        
+reg expected_out; 
+
+// Instantiate the MUX
+mux4to1 uut (
+    .in(in),
+    .sel(sel),
+    .out(out)
+);
+
+
+reg clk;
+initial clk = 0;
+always #5 clk = ~clk;
+
+// Test cases
+initial begin
+    // Test case 1
+    in = 4'b1010; sel = 2'b00; expected_out = in[0];
+    #10 if (out !== expected_out) 
+        $display("Test case failed for sel=00: Expected %b, got %b", expected_out, out);
+    else 
+        $display("Test case passed for sel=00.");
+
+    // Test case 2
+    in = 4'b1010; sel = 2'b01; expected_out = in[1];
+    #10 if (out !== expected_out) 
+        $display("Test case failed for sel=01: Expected %b, got %b", expected_out, out);
+    else 
+        $display("Test case passed for sel=01.");
+
+    // Test case 3
+    in = 4'b1010; sel = 2'b10; expected_out = in[2];
+    #10 if (out !== expected_out) 
+        $display("Test case failed for sel=10: Expected %b, got %b", expected_out, out);
+    else 
+        $display("Test case passed for sel=10.");
+
+    // Test case 4
+    in = 4'b1010; sel = 2'b11; expected_out = in[3];
+    #10 if (out !== expected_out) 
+        $display("Test case failed for sel=11: Expected %b, got %b", expected_out, out);
+    else 
+        $display("Test case passed for sel=11.");
+
+    $finish;
+end
+
+endmodule
