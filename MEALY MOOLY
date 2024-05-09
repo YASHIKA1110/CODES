@@ -1,0 +1,89 @@
+module Mealy_SequenceDetector(
+    input clk,
+    input reset,
+    input in,
+    output reg out
+);
+
+typedef enum reg [1:0] {
+    S0,
+    S1,
+    S2
+} state_type;
+
+state_type current_state, next_state;
+
+always @(posedge clk or posedge reset) begin
+    if (reset)
+        current_state <= S0;
+    else
+        current_state <= next_state;
+end
+
+always @(*) begin
+    case(current_state)
+        S0: next_state = in ? S1 : S0;
+        S1: next_state = in ? S2 : S0;
+        S2: next_state = in ? S2 : S0;
+        default: next_state = S0;
+    endcase
+end
+
+always @(*) begin
+    case(current_state)
+        S2: out = in ? 1 : 0;
+        default: out = 0;
+    endcase
+end
+
+endmodule
+
+
+
+TEST BENCH
+
+`timescale 1ns / 1ps
+
+module tb_SequenceDetector();
+
+reg clk, reset, in;
+wire out;
+
+Mealy_SequenceDetector uut (
+    .clk(clk),
+    .reset(reset),
+    .in(in),
+    .out(out)
+);
+
+initial begin
+    clk = 0;
+    forever #10 clk = !clk;
+end
+
+integer input_file, output_file, scan_file;
+integer r;
+
+initial begin
+    input_file = $fopen("input.txt", "r");
+    output_file = $fopen("output.txt", "w");
+    if (input_file == 0 || output_file == 0) begin
+        $display("Error: File could not be opened.");
+        $finish;
+    end
+
+    reset = 1; #20;
+    reset = 0;
+
+    while (!$feof(input_file)) begin
+        scan_file = $fscanf(input_file, "%b\n", in);
+        #20;
+        $fwrite(output_file, "%b\n", out);
+    end
+
+    $fclose(input_file);
+    $fclose(output_file);
+    $finish;
+end
+
+endmodule

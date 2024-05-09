@@ -1,0 +1,121 @@
+module CarryLookAheadAdder(
+    input [3:0] a, 
+    input [3:0] b,  
+    input cin,      
+    output [3:0] sum,
+    output cout      
+);
+
+    wire [3:0] g;
+    wire [3:0] p;  
+    wire [4:0] c;  
+    
+    assign g = a & b;
+    assign p = a ^ b;
+
+
+    assign c[0] = cin;
+    assign c[1] = g[0] | (p[0] & c[0]);
+    assign c[2] = g[1] | (p[1] & c[1]);
+    assign c[3] = g[2] | (p[2] & c[2]);
+    assign c[4] = g[3] | (p[3] & c[3]);
+
+    // Sum and carry out
+    assign sum = p ^ c[3:0];
+    assign cout = c[4];
+
+endmodule
+
+
+COUNTER TESTBENCH
+
+`timescale 1ns / 1ps
+
+module tb_CarryLookAheadAdder();
+
+reg [3:0] a, b;  
+reg cin;         
+wire [3:0] sum;  
+wire cout;     
+
+CarryLookAheadAdder uut (
+    .a(a),
+    .b(b),
+    .cin(cin),
+    .sum(sum),
+    .cout(cout)
+);
+
+
+reg [8:0] counter; 
+
+initial begin
+    counter = 0;
+    cin = 0; 
+
+   
+    for (counter = 0; counter < 512; counter = counter + 1) begin
+        {cin, a, b} = counter[8:0];  
+        #10; 
+
+       
+        $display("At time %t, with inputs a=%b, b=%b, cin=%b, output sum=%b, cout=%b", 
+                 $time, a, b, cin, sum, cout);
+    end
+
+    $finish;  
+end
+
+endmodule
+
+
+SELF CHECKING
+
+`timescale 1ns / 1ps
+
+module tb_CarryLookAheadAdder();
+
+reg [3:0] a, b;
+reg cin;
+wire [3:0] sum;
+wire cout;
+reg [3:0] expected_sum;
+reg expected_cout;
+
+CarryLookAheadAdder uut (
+    .a(a),
+    .b(b),
+    .cin(cin),
+    .sum(sum),
+    .cout(cout)
+);
+
+integer i;
+
+task calculate_expected_outputs;
+    input [3:0] a, b;
+    input cin;
+    output [3:0] expected_sum;
+    output expected_cout;
+    begin
+        {expected_cout, expected_sum} = a + b + cin;
+    end
+endtask
+
+initial begin
+    for (i = 0; i < 512; i = i + 1) begin
+        {cin, a, b} = i[8:0];
+        #10;
+        calculate_expected_outputs(a, b, cin, expected_sum, expected_cout);
+        if (sum !== expected_sum || cout !== expected_cout) begin
+            $display("Test failed for a=%b, b=%b, cin=%b: Expected sum=%b, cout=%b, got sum=%b, cout=%b",
+                     a, b, cin, expected_sum, expected_cout, sum, cout);
+        end else begin
+            $display("Test passed for a=%b, b=%b, cin=%b: sum=%b, cout=%b",
+                     a, b, cin, sum, cout);
+        end
+    end
+    $finish;
+end
+
+endmodule
