@@ -1,0 +1,51 @@
+module BCD_to_Binary (
+    input [15:0] bcd,
+    output reg [13:0] binary
+);
+
+integer i;
+
+always @(bcd) begin
+    binary = 0;
+    for (i = 15; i >= 0; i = i - 1) begin
+        if (binary >= 5)
+            binary = binary + 3;
+        binary = binary << 1;
+        binary[0] = bcd[i];
+    end
+end
+
+endmodule
+
+
+
+`timescale 1ns / 1ps
+
+module tb_BCD_to_Binary;
+
+reg [15:0] bcd;
+wire [13:0] binary;
+integer i;
+reg [13:0] expected_binary;
+
+BCD_to_Binary uut (
+    .bcd(bcd),
+    .binary(binary)
+);
+
+initial begin
+    for (i = 0; i < 10000; i = i + 1) begin
+        bcd = i;
+        #10;
+        expected_binary = i;  // Assuming i is within the range of 4-digit BCD
+        if (binary !== expected_binary) begin
+            $display("Test failed for BCD=%d: Expected Binary=%d, got Binary=%d", bcd, expected_binary, binary);
+        end else begin
+            $display("Test passed for BCD=%d: Binary=%d", bcd, binary);
+        end
+    end
+    $finish;
+end
+
+endmodule
+
