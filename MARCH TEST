@@ -1,0 +1,79 @@
+module BIST_Controller(
+    input clk,
+    input reset,
+    input start,
+    output reg done,
+    output reg [3:0] addr,
+    output reg [7:0] data,
+    output reg we,
+    input [7:0] q
+);
+
+reg [2:0] state;
+localparam IDLE = 0, WRITE_ZEROS = 1, READ_ZEROS_WRITE_ONES = 2, READ_ONES_WRITE_ZEROS = 3, READ_ZEROS = 4, FINISH = 5;
+
+always @(posedge clk or posedge reset) begin
+    if (reset) begin
+        state <= IDLE;
+        addr <= 0;
+        data <= 0;
+        we <= 0;
+        done <= 0;
+    end else begin
+        case (state)
+            IDLE: begin
+                if (start) begin
+                    state <= WRITE_ZEROS;
+                    addr <= 0;
+                end
+            end
+            WRITE_ZEROS: begin
+                data <= 8'b00000000;
+                we <= 1;
+                addr <= addr + 1;
+                if (addr == 15)
+                    state <= READ_ZEROS_WRITE_ONES;
+            end
+            READ_ZEROS_WRITE_ONES: begin
+                we <= 0;
+                if (q !== 8'b00000000) begin
+                    state <= FINISH;
+                end else begin
+                    data <= 8'b11111111;
+                    we <= 1;
+                    addr <= addr + 1;
+                    if (addr == 15)
+                        state <= READ_ONES_WRITE_ZEROS;
+                end
+            end
+            READ_ONES_WRITE_ZEROS: begin
+                we <= 0;
+                if (q !== 8'b11111111) begin
+                    state <= FINISH;
+                end else begin
+                    data <= 8'b00000000;
+                    we <= 1;
+                    addr <= addr + 1;
+                    if (addr == 15)
+                        state <= READ_ZEROS;
+                end
+            end
+            READ_ZEROS: begin
+                we <= 0;
+                if (q !== 8'b00000000) begin
+                    state <= FINISH;
+                end else begin
+                    addr <= addr + 1;
+                    if (addr == 15)
+                        state <= FINISH;
+                end
+            end
+            FINISH: begin
+                we <= 0;
+                done <= 1;
+            end
+        endcase
+    end
+end
+
+endmodule
