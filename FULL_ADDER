@@ -6,7 +6,6 @@ module FullAdder(
     output wire cout 
 );
 
-// Logic for sum and carry output
 assign sum = a ^ b ^ cin;      
 assign cout = (a & b) | (b & cin) | (a & cin);  
 
@@ -16,12 +15,12 @@ endmodule
 
 module tb_FullAdder();
 
-reg a, b, cin;        // Inputs to the full adder
-wire sum, cout;       // Outputs from the full adder
-reg expected_sum;     // Expected sum for checking
-reg expected_cout;    // Expected carry out for checking
+reg a, b, cin;        
+wire sum, cout;      
+reg expected_sum;     
+reg expected_cout;   
 
-// Instantiate the Full Adder
+
 FullAdder uut (
     .a(a),
     .b(b),
@@ -53,7 +52,7 @@ initial begin
         end
     end
 
-    $finish;  // End simulation
+    $finish; 
 end
 
 endmodule
