@@ -1,0 +1,62 @@
+module FullAdder(
+    input wire a,    
+    input wire b,    
+    input wire cin,  
+    output wire sum, 
+    output wire cout 
+);
+
+// Logic for sum and carry output
+assign sum = a ^ b ^ cin;      
+assign cout = (a & b) | (b & cin) | (a & cin);  
+
+endmodule
+
+`timescale 1ns / 1ps
+
+module tb_FullAdder();
+
+reg a, b, cin;        // Inputs to the full adder
+wire sum, cout;       // Outputs from the full adder
+reg expected_sum;     // Expected sum for checking
+reg expected_cout;    // Expected carry out for checking
+
+// Instantiate the Full Adder
+FullAdder uut (
+    .a(a),
+    .b(b),
+    .cin(cin),
+    .sum(sum),
+    .cout(cout)
+);
+
+
+integer i;  
+
+initial begin
+    
+    for (i = 0; i < 8; i = i + 1) begin
+        {a, b, cin} = i[2:0]; 
+        #10; 
+
+        
+        expected_sum = a ^ b ^ cin;
+        expected_cout = (a & b) | (b & cin) | (a & cin);
+
+        
+        if (sum !== expected_sum || cout !== expected_cout) begin
+            $display("Test failed for a=%b, b=%b, cin=%b: Expected sum=%b, cout=%b, got sum=%b, cout=%b",
+                      a, b, cin, expected_sum, expected_cout, sum, cout);
+        end else begin
+            $display("Test passed for a=%b, b=%b, cin=%b: sum=%b, cout=%b",
+                      a, b, cin, sum, cout);
+        end
+    end
+
+    $finish;  // End simulation
+end
+
+endmodule
+
+
+
