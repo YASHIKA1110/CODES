@@ -1,46 +1,88 @@
 module c17(
-    input IN1, IN2, IN3,
-    output OUT1, OUT2
-);
-    wire N4, N5, N6, N7;
+    input [0:4] a,
+    output c,
+    output d
+); 
+    wire b0, b1, b2, b3;
 
-    nand #(50) G1(N4, IN1, IN2);
-    nand #(50) G2(N5, IN1, N3);
-    nand #(50) G3(N6, N4, IN3);
-    nand #(50) G4(N7, N4, N5);
-    nand #(50) G5(OUT1, N5, N6);
-    nand #(50) G6(OUT2, N6, N7);
-
+    nand u0(b0, a[0], a[1]);
+    nand u1(b1, a[1], a[3]);
+    nand u2(b2, a[2], b1);
+    nand u3(b3, a[4], b1);
+    nand u4(c, b0, b2);
+    nand u5(d, b2, b3);
 endmodule
 
 
 
-TEST BENCH
+module test_bench;
+    // Inputs
+    reg [4:0] a;
 
-`timescale 1ns / 1ps
+    // Outputs
+    wire c, d;
 
-module tb_c17();
-
-    reg IN1, IN2, IN3;
-    wire OUT1, OUT2;
-    reg [5:0] test_vector; // Test vector for inputs
-    integer i;
-
-    // Instance of the C17 circuit
-    c17 uut (
-        .IN1(IN1),
-        .IN2(IN2),
-        .IN3(IN3),
-        .OUT1(OUT1),
-        .OUT2(OUT2)
+    // Instantiate the module to be tested
+    c17 module_under_test(
+        .a(a),
+        .c(c),
+        .d(d)
     );
 
+    // Clock generation
+    reg clk;
+    always #5 clk = ~clk; // Clock period of 10ns
+
+    // Counter for generating inputs
+    reg [4:0] counter = 0;
+
+    // Test vectors
+    reg expected_c;
+    reg expected_d;
+
+    // Initialize expected values
     initial begin
-        for (i = 0; i < 8; i = i + 1) begin
-            {IN3, IN2, IN1} = i[2:0];
+        $display("for a[0] stuck at 0");
+        // Set expected values for stuck-at-0 fault on a[0]
+        expected_c = 0;
+        expected_d = 0;
+        clk = 0;
+    end
+
+    // Testbench stimulus
+    always @(posedge clk) begin
+        if (a < 5'b11111) begin
+            // Provide input to the module under test
+            a <= counter;
+
+            // Increment the counter
+            counter <= counter + 1;
+
+            // Add some delay for observing output
             #10;
-            $display("IN1=%b, IN2=%b, IN3=%b, OUT1=%b, OUT2=%b", IN1, IN2, IN3, OUT1, OUT2);
+
+            // Check output
+            if (counter != 0 && counter != 1) begin
+                if (a[0] != 0) begin
+                    if (c !== expected_c || d !== expected_d) begin
+                        $display("the input : %b can be used as a test vector as, Expected C: %b, Expected D: %b, Actual C: %b, Actual D: %b",
+                        a, expected_c, expected_d, c, d);
+                    end
+                end
+            end
         end
     end
 
+    initial begin
+        // Initialize inputs
+        a <= 0;
+
+        // Reset counter
+        counter <= 0;
+
+        // Wait for simulation to finish
+        #100000;
+    end
+
 endmodule
+
